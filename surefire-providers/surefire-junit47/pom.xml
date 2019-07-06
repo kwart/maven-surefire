@@ -34,6 +34,11 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-provider-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
             <artifactId>common-junit48</artifactId>
             <version>${project.version}</version>
         </dependency>

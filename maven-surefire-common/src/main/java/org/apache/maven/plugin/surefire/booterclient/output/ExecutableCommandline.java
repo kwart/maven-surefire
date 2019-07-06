@@ -1,4 +1,4 @@
-package org.apache.maven.surefire.booter;
+package org.apache.maven.plugin.surefire.booterclient.output;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,12 +19,14 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
-import org.apache.maven.surefire.testset.TestArtifactInfo;
+import org.apache.maven.shared.utils.cli.CommandLineCallable;
+import org.apache.maven.shared.utils.cli.Commandline;
+import org.apache.maven.shared.utils.cli.StreamConsumer;
 
 /**
- * @author Kristian Rosenvold
+ *
  */
-interface TestArtifactInfoAware
+public interface ExecutableCommandline
 {
-    void setTestArtifactInfo( TestArtifactInfo testArtifactInfo );
+    CommandLineCallable executeCommandLineAsCallable( Commandline cli, StreamConsumer stdOut, StreamConsumer stdErr );
 }

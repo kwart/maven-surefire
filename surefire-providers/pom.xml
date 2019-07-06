@@ -44,6 +44,7 @@
     <module>surefire-junit-platform</module>
     <module>surefire-testng-utils</module>
     <module>surefire-testng</module>
+    <module>surefire-provider-api</module>
   </modules>
 
   <dependencies>

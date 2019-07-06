@@ -21,9 +21,10 @@ package org.apache.maven.plugin.surefire.booterclient.lazytestprovider;
 
 import org.apache.maven.surefire.booter.Command;
 import org.apache.maven.surefire.booter.MasterProcessCommand;
+import org.apache.maven.surefire.booter.spi.DefaultMasterProcessChannelDecoder;
+import org.apache.maven.surefire.providerapi.MasterProcessChannelDecoder;
 import org.junit.Test;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -33,7 +34,6 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.maven.surefire.booter.MasterProcessCommand.BYE_ACK;
-import static org.apache.maven.surefire.booter.MasterProcessCommand.decode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -141,13 +141,13 @@ public class TestProvidingInputStreamTest
             throws IOException
     {
         TestProvidingInputStream pluginIs = new TestProvidingInputStream( new ConcurrentLinkedQueue<String>() );
+        MasterProcessChannelDecoder decoder = new DefaultMasterProcessChannelDecoder( pluginIs, null );
         pluginIs.acknowledgeByeEventReceived();
         pluginIs.noop();
-        DataInputStream is = new DataInputStream( pluginIs );
-        Command bye = decode( is );
+        Command bye = decoder.decode();
         assertThat( bye, is( notNullValue() ) );
         assertThat( bye.getCommandType(), is( BYE_ACK ) );
-        Command noop = decode( is );
+        Command noop = decoder.decode();
         assertThat( noop, is( notNullValue() ) );
         assertThat( noop.getCommandType(), is( MasterProcessCommand.NOOP ) );
     }
