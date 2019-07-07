@@ -35,7 +35,4 @@ public interface DifferedChannelCommandSender
     extends NotifiableTestStream, Closeable
 {
     void setFlushReceiverProvider( FlushReceiverProvider flushReceiverProvider );
-
-    @Override
-    void close();
 }

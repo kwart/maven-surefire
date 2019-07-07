@@ -20,7 +20,6 @@ package org.apache.maven.plugin.surefire.booterclient.lazytestprovider;
  */
 
 import org.apache.maven.surefire.booter.Command;
-import org.apache.maven.surefire.booter.MasterProcessCommand;
 import org.apache.maven.surefire.booter.spi.DefaultMasterProcessChannelDecoder;
 import org.apache.maven.surefire.providerapi.MasterProcessChannelDecoder;
 import org.junit.Test;
@@ -34,6 +33,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.maven.surefire.booter.MasterProcessCommand.BYE_ACK;
+import static org.apache.maven.surefire.booter.MasterProcessCommand.NOOP;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -149,7 +149,7 @@ public class TestProvidingInputStreamTest
         assertThat( bye.getCommandType(), is( BYE_ACK ) );
         Command noop = decoder.decode();
         assertThat( noop, is( notNullValue() ) );
-        assertThat( noop.getCommandType(), is( MasterProcessCommand.NOOP ) );
+        assertThat( noop.getCommandType(), is( NOOP ) );
     }
 
     private static void sleep( long millis )

@@ -83,21 +83,22 @@ public class DefaultMasterProcessChannelDecoder implements MasterProcessChannelD
             }
             else if ( !frameFinished )
             {
-                boolean isFinishedFrame = c == ':' && isTokenComplete( tokens ) || c == '\n' || c == '\r';
-                if ( isFinishedFrame || c == ':' )
+                boolean isColon = c == ':';
+                if ( isColon || c == '\n' || c == '\r' )
                 {
                     tokens.add( frame.toString() );
                     frame.setLength( 0 );
-                    if ( isFinishedFrame )
-                    {
-                        frameFinished = true;
-                        frameStarted = false;
-                        break;
-                    }
                 }
                 else
                 {
                     frame.append( c );
+                }
+                boolean isFinishedFrame = isTokenComplete( tokens );
+                if ( isFinishedFrame )
+                {
+                    frameFinished = true;
+                    frameStarted = false;
+                    break;
                 }
             }
 

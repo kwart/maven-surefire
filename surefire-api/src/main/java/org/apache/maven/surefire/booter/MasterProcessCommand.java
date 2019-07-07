@@ -128,6 +128,6 @@ public enum MasterProcessCommand
                 .append( MAGIC_NUMBER )
                 .append( operation );
 
-        return data == null ? s : s.append( ':' ).append( data );
+        return data == null ? s.append( ':' ) : s.append( ':' ).append( data ).append( ':' );
     }
 }
