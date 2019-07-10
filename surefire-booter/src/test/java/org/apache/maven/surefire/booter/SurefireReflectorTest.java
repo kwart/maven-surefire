@@ -85,10 +85,10 @@ public class SurefireReflectorTest
         };
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         SurefireReflector reflector = new SurefireReflector( cl );
-        BaseProviderFactory baseProviderFactory =
-                (BaseProviderFactory) reflector.createBooterConfiguration( cl, factory, true );
-        assertNotNull( baseProviderFactory.getReporterFactory() );
-        assertSame( factory, baseProviderFactory.getReporterFactory() );
+        BaseProviderFactory bpf = (BaseProviderFactory) reflector.createBooterConfiguration( cl, true );
+        bpf.setReporterFactory( factory );
+        assertNotNull( bpf.getReporterFactory() );
+        assertSame( factory, bpf.getReporterFactory() );
     }
 
     public void testSetDirectoryScannerParameters()
@@ -165,6 +165,30 @@ public class SurefireReflectorTest
 
         TestArtifactInfo testArtifactInfo = new TestArtifactInfo( "12.3", "test" );
         surefireReflector.setTestArtifactInfo( foo, testArtifactInfo );
+        assertTrue( isCalled( foo ) );
+    }
+
+    public void testReporterFactoryAware()
+    {
+        SurefireReflector surefireReflector = getReflector();
+        Object foo = getFoo();
+
+        ReporterFactory reporterFactory = new ReporterFactory()
+        {
+            @Override
+            public RunListener createReporter()
+            {
+                return null;
+            }
+
+            @Override
+            public RunResult close()
+            {
+                return null;
+            }
+        };
+
+        surefireReflector.setReporterFactory( foo, reporterFactory );
         assertTrue( isCalled( foo ) );
     }
 

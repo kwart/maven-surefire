@@ -26,6 +26,7 @@ import org.apache.maven.surefire.providerapi.MasterProcessChannelDecoder;
 import org.apache.maven.surefire.providerapi.ProviderParameters;
 import org.apache.maven.surefire.providerapi.SurefireProvider;
 import org.apache.maven.surefire.report.LegacyPojoStackTraceWriter;
+import org.apache.maven.surefire.report.StackTraceWriter;
 import org.apache.maven.surefire.spi.MasterProcessChannelDecoderFactory;
 import org.apache.maven.surefire.testset.TestSetFailedException;
 
@@ -90,8 +91,6 @@ public final class ForkedBooter
     {
         BooterDeserializer booterDeserializer =
                 new BooterDeserializer( createSurefirePropertiesIfFileExists( tmpDir, surefirePropsFileName ) );
-        // todo: print PID in debug console logger in version 2.21.2
-        pingScheduler = isDebugging() ? null : listenToShutdownCommands( booterDeserializer.getPluginPid() );
         setSystemProperties( new File( tmpDir, effectiveSystemPropertiesFileName ) );
 
         providerConfiguration = booterDeserializer.deserialize();
@@ -106,6 +105,9 @@ public final class ForkedBooter
         String communicationConfig = startupConfiguration.getInterProcessChannelConfiguration();
         MasterProcessChannelDecoder decoder = lookupDecoderFactory().createDecoder( communicationConfig, logger );
         commandReader = new CommandReader( decoder, providerConfiguration.getShutdown(), logger );
+
+        // todo: print PID in debug console logger
+        pingScheduler = isDebugging() ? null : listenToShutdownCommands( booterDeserializer.getPluginPid() );
 
         systemExitTimeoutInSeconds = providerConfiguration.systemExitTimeout( DEFAULT_SYSTEM_EXIT_TIMEOUT_IN_SECONDS );
 
@@ -425,6 +427,8 @@ public final class ForkedBooter
         {
             DumpErrorSingleton.getSingleton().dumpException( t );
             t.printStackTrace();
+            StackTraceWriter stack = new LegacyPojoStackTraceWriter( "test subsystem", "no method", t );
+            booter.eventChannel.consoleErrorLog( stack, false );
             booter.cancelPingScheduler();
             booter.exit1();
         }

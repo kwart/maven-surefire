@@ -185,7 +185,7 @@ public final class TestProvidingInputStream
         {
             // help GC to free this object because StreamFeeder Thread cannot read it anyway after IOE
             invalidateInternalBuffer();
-            throw new IOException( e.getLocalizedMessage() );
+            throw new IOException( e.getLocalizedMessage(), e );
         }
     }
 }

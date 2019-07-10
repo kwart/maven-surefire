@@ -21,10 +21,8 @@ package org.apache.maven.plugin.surefire.booterclient.lazytestprovider;
 
 import org.apache.maven.surefire.booter.Command;
 import org.apache.maven.surefire.booter.Shutdown;
-import org.apache.maven.surefire.extensions.ForkedChannelServer;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;

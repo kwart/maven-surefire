@@ -670,7 +670,7 @@ public class ForkStarter
                     //noinspection ThrowFromFinallyBlock
                     throw new SurefireBooterForkException( "There was an error in the forked process"
                                                         + detail
-                                                        + ( stackTrace == null ? "" : stackTrace ), cause );
+                                                        + ( stackTrace == null ? "" : "\n" + stackTrace ), cause );
                 }
                 if ( !forkClient.isSaidGoodBye() )
                 {

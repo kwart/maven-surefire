@@ -47,7 +47,7 @@ public class MasterProcessCommandTest
                     assertEquals( String.class, commandType.getDataType() );
                     byte[] encoded = commandType.encode( "pkg.Test" );
                     assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-std-out:run-testclass:pkg.Test" );
+                            .isEqualTo( ":maven-surefire-std-out:run-testclass:pkg.Test:" );
                     byte[] line = addNL( encoded, '\n' );
                     InputStream is = new ByteArrayInputStream( line );
                     DefaultMasterProcessChannelDecoder decoder = new DefaultMasterProcessChannelDecoder( is, null );
@@ -60,7 +60,7 @@ public class MasterProcessCommandTest
                     assertEquals( Void.class, commandType.getDataType() );
                     encoded = commandType.encode();
                     assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-std-out:testset-finished" );
+                            .isEqualTo( ":maven-surefire-std-out:testset-finished:" );
                     is = new ByteArrayInputStream( encoded );
                     decoder = new DefaultMasterProcessChannelDecoder( is, null );
                     command = decoder.decode();
@@ -72,7 +72,7 @@ public class MasterProcessCommandTest
                     assertEquals( Void.class, commandType.getDataType() );
                     encoded = commandType.encode();
                     assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-std-out:skip-since-next-test" );
+                            .isEqualTo( ":maven-surefire-std-out:skip-since-next-test:" );
                     is = new ByteArrayInputStream( encoded );
                     decoder = new DefaultMasterProcessChannelDecoder( is, null );
                     command = decoder.decode();
@@ -83,7 +83,7 @@ public class MasterProcessCommandTest
                     assertEquals( String.class, commandType.getDataType() );
                     encoded = commandType.encode( Shutdown.EXIT.name() );
                     assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-std-out:shutdown:EXIT" );
+                            .isEqualTo( ":maven-surefire-std-out:shutdown:EXIT:" );
                     is = new ByteArrayInputStream( encoded );
                     decoder = new DefaultMasterProcessChannelDecoder( is, null );
                     command = decoder.decode();
@@ -95,7 +95,7 @@ public class MasterProcessCommandTest
                     assertEquals( Void.class, commandType.getDataType() );
                     encoded = commandType.encode();
                     assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-std-out:noop" );
+                            .isEqualTo( ":maven-surefire-std-out:noop:" );
                     is = new ByteArrayInputStream( encoded );
                     decoder = new DefaultMasterProcessChannelDecoder( is, null );
                     command = decoder.decode();
@@ -107,7 +107,7 @@ public class MasterProcessCommandTest
                     assertEquals( Void.class, commandType.getDataType() );
                     encoded = commandType.encode();
                     assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-std-out:bye-ack" );
+                            .isEqualTo( ":maven-surefire-std-out:bye-ack:" );
                     is = new ByteArrayInputStream( encoded );
                     decoder = new DefaultMasterProcessChannelDecoder( is, null );
                     command = decoder.decode();

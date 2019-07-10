@@ -55,6 +55,7 @@ public class DefaultMasterProcessChannelDecoder implements MasterProcessChannelD
         return cmd == null || cmd.hasDataType();
     }
 
+    @SuppressWarnings( "checkstyle:innerassignment" )
     @Override
     public Command decode() throws IOException
     {

@@ -46,7 +46,6 @@ import static java.util.Collections.checkedList;
 import static org.apache.maven.surefire.util.ReflectionUtils.getConstructor;
 import static org.apache.maven.surefire.util.ReflectionUtils.getMethod;
 import static org.apache.maven.surefire.util.ReflectionUtils.instantiateOneArg;
-import static org.apache.maven.surefire.util.ReflectionUtils.instantiateTwoArgs;
 import static org.apache.maven.surefire.util.ReflectionUtils.invokeGetter;
 import static org.apache.maven.surefire.util.ReflectionUtils.invokeMethodWithArray;
 import static org.apache.maven.surefire.util.ReflectionUtils.invokeSetter;
@@ -205,11 +204,9 @@ public final class SurefireReflector
         return newInstance( constructor, reporterConfig.getReportsDirectory(), reporterConfig.isTrimStackTrace() );
     }
 
-    public Object createBooterConfiguration( ClassLoader surefireClassLoader, Object factoryInstance,
-                                             boolean insideFork )
+    public Object createBooterConfiguration( ClassLoader surefireClassLoader, boolean insideFork )
     {
-        return instantiateTwoArgs( surefireClassLoader, BaseProviderFactory.class.getName(),
-                                   reporterFactory, factoryInstance, boolean.class, insideFork );
+        return instantiateOneArg( surefireClassLoader, BaseProviderFactory.class.getName(), boolean.class, insideFork );
     }
 
     public Object instantiateProvider( String providerClassName, Object booterParameters )
@@ -343,6 +340,19 @@ public final class SurefireReflector
     {
         Object param = createTestArtifactInfo( testArtifactInfo );
         invokeSetter( o, "setTestArtifactInfo", this.testArtifactInfo, param );
+    }
+
+    public void setReporterFactoryAware( Object o, Object reporterFactory )
+    {
+        if ( baseProviderFactory.isAssignableFrom( o.getClass() ) )
+        {
+            setReporterFactory( o, reporterFactory );
+        }
+    }
+
+    void setReporterFactory( Object o, Object reporterFactory )
+    {
+        invokeSetter( o, "setReporterFactory", this.reporterFactory, reporterFactory );
     }
 
     private boolean isRunResult( Object o )

@@ -21,6 +21,7 @@ package org.apache.maven.surefire.booter;
 
 import java.util.Map;
 import org.apache.maven.surefire.report.ReporterConfiguration;
+import org.apache.maven.surefire.report.ReporterFactory;
 import org.apache.maven.surefire.testset.DirectoryScannerParameters;
 import org.apache.maven.surefire.testset.RunOrderParameters;
 import org.apache.maven.surefire.testset.TestArtifactInfo;
@@ -107,5 +108,11 @@ public class Foo extends BaseProviderFactory
     {
         this.runOrderParameters = runOrderParameters;
         this.called = true;
+    }
+
+    @Override
+    public void setReporterFactory( ReporterFactory reporterFactory )
+    {
+        called = true;
     }
 }
