@@ -29,6 +29,7 @@
     </parent>
 
     <artifactId>surefire-extensions-spi</artifactId>
+    <name>Surefire Extensions SPI</name>
 
     <dependencies>
         <dependency>
