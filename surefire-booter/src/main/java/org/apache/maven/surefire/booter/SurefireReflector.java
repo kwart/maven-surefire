@@ -19,8 +19,6 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
-import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
-import org.apache.maven.plugin.surefire.log.api.ConsoleLoggerDecorator;
 import org.apache.maven.surefire.cli.CommandLineOption;
 import org.apache.maven.surefire.providerapi.ProviderParameters;
 import org.apache.maven.surefire.report.ReporterConfiguration;
@@ -368,18 +366,5 @@ public final class SurefireReflector
             ordinals.add( e.ordinal() );
         }
         return ordinals;
-    }
-
-    public static Object createConsoleLogger( ConsoleLogger consoleLogger, ClassLoader cl )
-    {
-        try
-        {
-            Class<?> decoratorClass = cl.loadClass( ConsoleLoggerDecorator.class.getName() );
-            return getConstructor( decoratorClass, Object.class ).newInstance( consoleLogger );
-        }
-        catch ( Exception e )
-        {
-            throw new SurefireReflectionException( e );
-        }
     }
 }

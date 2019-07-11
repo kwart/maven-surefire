@@ -36,12 +36,13 @@ public class JUnit4SuiteTest extends TestCase
     {
         TestSuite suite = new TestSuite();
         suite.addTest( new JUnit4TestAdapter( CommandReaderTest.class ) );
-        suite.addTest( new JUnit4TestAdapter( MasterProcessCommandTest.class ) );
-        suite.addTest( new JUnit4TestAdapter( SurefireReflectorTest.class ) );
         suite.addTest( new JUnit4TestAdapter( PpidCheckerTest.class ) );
         suite.addTest( new JUnit4TestAdapter( SystemUtilsTest.class ) );
+        suite.addTest( new JUnit4TestAdapter( IsolatedClassLoaderTest.class ) );
         suite.addTestSuite( ClasspathTest.class );
         suite.addTestSuite( PropertiesWrapperTest.class );
+        suite.addTestSuite( DefaultMasterProcessChannelDecoderTest.class );
+        suite.addTestSuite( SurefireReflectorTest.class );
         return suite;
     }
 }

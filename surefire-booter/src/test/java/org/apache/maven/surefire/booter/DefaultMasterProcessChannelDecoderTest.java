@@ -31,10 +31,9 @@ import static org.hamcrest.Matchers.*;
 import static org.fest.assertions.Assertions.assertThat;
 
 /**
- * @author <a href="mailto:tibordigana@apache.org">Tibor Digana (tibor17)</a>
- * @since 2.19
+ * Tests for {@link DefaultMasterProcessChannelDecoder}.
  */
-public class MasterProcessCommandTest
+public class DefaultMasterProcessChannelDecoderTest
     extends TestCase
 {
     public void testDataToByteArrayAndBack() throws IOException
