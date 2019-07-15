@@ -30,6 +30,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -47,6 +49,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.maven.surefire.booter.SystemPropertyManager.setSystemProperties;
 import static org.apache.maven.surefire.util.ReflectionUtils.instantiateOneArg;
 import static org.apache.maven.surefire.util.internal.DaemonThreadFactory.newDaemonThreadFactory;
+import static org.apache.maven.surefire.util.internal.StringUtils.NL;
 
 /**
  * The part of the booter that is unique to a forked vm.
@@ -62,12 +65,13 @@ public final class ForkedBooter
 {
     private static final long DEFAULT_SYSTEM_EXIT_TIMEOUT_IN_SECONDS = 30L;
     private static final long PING_TIMEOUT_IN_SECONDS = 30L;
-    private static final long ONE_SECOND_IN_MILLIS = 1000L;
+    private static final long ONE_SECOND_IN_MILLIS = 1_000L;
     private static final String LAST_DITCH_SHUTDOWN_THREAD = "surefire-forkedjvm-last-ditch-daemon-shutdown-thread-";
     private static final String PING_THREAD = "surefire-forkedjvm-ping-";
 
     private final CommandReader commandReader = CommandReader.getReader();
     private final ForkedChannelEncoder eventChannel = new ForkedChannelEncoder( System.out );
+    private final Semaphore exitBarrier = new Semaphore( 0 );
 
     private volatile long systemExitTimeoutInSeconds = DEFAULT_SYSTEM_EXIT_TIMEOUT_IN_SECONDS;
     private volatile PingScheduler pingScheduler;
@@ -92,7 +96,6 @@ public final class ForkedBooter
                 .init( providerConfiguration.getReporterConfiguration().getReportsDirectory(), dumpFileName );
 
         startupConfiguration = booterDeserializer.getProviderConfiguration();
-        systemExitTimeoutInSeconds = providerConfiguration.systemExitTimeout( DEFAULT_SYSTEM_EXIT_TIMEOUT_IN_SECONDS );
 
         AbstractPathConfiguration classpathConfiguration = startupConfiguration.getClasspathConfiguration();
 
@@ -129,7 +132,10 @@ public final class ForkedBooter
             DumpErrorSingleton.getSingleton().dumpException( t );
             eventChannel.consoleErrorLog( new LegacyPojoStackTraceWriter( "test subsystem", "no method", t ), false );
         }
-        acknowledgedExit();
+        finally
+        {
+            acknowledgedExit();
+        }
     }
 
     private Object createTestSet( TypeEncodedValue forkedTestSet, boolean readTestsFromCommandReader, ClassLoader cl )
@@ -175,7 +181,7 @@ public final class ForkedBooter
         AtomicBoolean pingDone = new AtomicBoolean( true );
         commandReader.addNoopListener( createPingHandler( pingDone ) );
 
-        PingScheduler pingMechanisms = new PingScheduler( createPingScheduler(),
+        /*PingScheduler pingMechanisms = new PingScheduler( createPingScheduler(),
                                                           ppid == null ? null : new PpidChecker( ppid ) );
         if ( pingMechanisms.pluginProcessChecker != null )
         {
@@ -185,7 +191,8 @@ public final class ForkedBooter
         Runnable pingJob = createPingJob( pingDone, pingMechanisms.pluginProcessChecker );
         pingMechanisms.pingScheduler.scheduleAtFixedRate( pingJob, 0L, PING_TIMEOUT_IN_SECONDS, SECONDS );
 
-        return pingMechanisms;
+        return pingMechanisms;*/
+        return null;
     }
 
     private Runnable processCheckerJob( final PingScheduler pingMechanism )
@@ -202,7 +209,11 @@ public final class ForkedBooter
                                  && !pingMechanism.pingScheduler.isShutdown() )
                     {
                         DumpErrorSingleton.getSingleton()
-                                .dumpText( "Killing self fork JVM. Maven process died." );
+                                .dumpText( "Killing self fork JVM. Maven process died."
+                                        + NL
+                                        + "Thread dump before killing the process (" + getProcessName() + "):"
+                                        + NL
+                                        + generateThreadDump() );
 
                         kill();
                     }
@@ -239,17 +250,33 @@ public final class ForkedBooter
                 if ( shutdown.isKill() )
                 {
                     DumpErrorSingleton.getSingleton()
-                            .dumpText( "Killing self fork JVM. Received SHUTDOWN command from Maven shutdown hook." );
+                            .dumpText( "Killing self fork JVM. Received SHUTDOWN command from Maven shutdown hook."
+                                    + NL
+                                    + "Thread dump before killing the process (" + getProcessName() + "):"
+                                    + NL
+                                    + generateThreadDump() );
                     kill();
                 }
                 else if ( shutdown.isExit() )
                 {
                     cancelPingScheduler();
                     DumpErrorSingleton.getSingleton()
-                            .dumpText( "Exiting self fork JVM. Received SHUTDOWN command from Maven shutdown hook." );
+                            .dumpText( "Exiting self fork JVM. Received SHUTDOWN command from Maven shutdown hook."
+                                    + NL
+                                    + "Thread dump before exiting the process (" + getProcessName() + "):"
+                                    + NL
+                                    + generateThreadDump() );
+                    exitBarrier.release();
                     exit1();
                 }
-                // else refers to shutdown=testset, but not used now, keeping reader open
+                else
+                {
+                    // else refers to shutdown=testset, but not used now, keeping reader open
+                    DumpErrorSingleton.getSingleton()
+                            .dumpText( "Thread dump for process (" + getProcessName() + "):"
+                                    + NL
+                                    + generateThreadDump() );
+                }
             }
         };
     }
@@ -267,7 +294,11 @@ public final class ForkedBooter
                     if ( !hasPing )
                     {
                         DumpErrorSingleton.getSingleton()
-                                .dumpText( "Killing self fork JVM. PING timeout elapsed." );
+                                .dumpText( "Killing self fork JVM. PING timeout elapsed."
+                                        + NL
+                                        + "Thread dump before killing the process (" + getProcessName() + "):"
+                                        + NL
+                                        + generateThreadDump() );
 
                         kill();
                     }
@@ -295,20 +326,19 @@ public final class ForkedBooter
 
     private void acknowledgedExit()
     {
-        final Semaphore barrier = new Semaphore( 0 );
         commandReader.addByeAckListener( new CommandListener()
                                           {
                                               @Override
                                               public void update( Command command )
                                               {
-                                                  barrier.release();
+                                                  exitBarrier.release();
                                               }
                                           }
         );
         eventChannel.bye();
         launchLastDitchDaemonShutdownThread( 0 );
         long timeoutMillis = max( systemExitTimeoutInSeconds * ONE_SECOND_IN_MILLIS, ONE_SECOND_IN_MILLIS );
-        acquireOnePermit( barrier, timeoutMillis );
+        acquireOnePermit( exitBarrier, timeoutMillis );
         cancelPingScheduler();
         commandReader.stop();
         System.exit( 0 );
@@ -342,14 +372,24 @@ public final class ForkedBooter
     @SuppressWarnings( "checkstyle:emptyblock" )
     private void launchLastDitchDaemonShutdownThread( final int returnCode )
     {
-        getJvmTerminator().schedule( new Runnable()
-                                        {
-                                            @Override
-                                            public void run()
-                                            {
-                                                kill( returnCode );
-                                            }
-                                        }, systemExitTimeoutInSeconds, SECONDS
+        getJvmTerminator()
+                .schedule( new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        DumpErrorSingleton.getSingleton()
+                                .dumpText( "Thread dump for process ("
+                                        + getProcessName()
+                                        + ") after "
+                                        + systemExitTimeoutInSeconds
+                                        + " seconds shutdown timeout:"
+                                        + NL
+                                        + generateThreadDump() );
+
+                        kill( returnCode );
+                    }
+                }, systemExitTimeoutInSeconds, SECONDS
         );
     }
 
@@ -422,9 +462,10 @@ public final class ForkedBooter
     private static ScheduledExecutorService createPingScheduler()
     {
         ThreadFactory threadFactory = newDaemonThreadFactory( PING_THREAD + PING_TIMEOUT_IN_SECONDS + "s" );
-        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor( 1, threadFactory );
-        executor.setKeepAliveTime( 3L, SECONDS );
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor( 2, threadFactory );
+        //executor.setKeepAliveTime( 3L, SECONDS );
         executor.setMaximumPoolSize( 2 );
+        executor.prestartAllCoreThreads();
         return executor;
     }
 
@@ -471,5 +512,35 @@ public final class ForkedBooter
         {
             return pingScheduler.isShutdown();
         }
+    }
+
+    public static String generateThreadDump()
+    {
+        StringBuilder dump = new StringBuilder();
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        ThreadInfo[] threadInfos = threadMXBean.getThreadInfo( threadMXBean.getAllThreadIds(), 100 );
+        for ( ThreadInfo threadInfo : threadInfos )
+        {
+            dump.append( '"' );
+            dump.append( threadInfo.getThreadName() );
+            dump.append( "\" " );
+            Thread.State state = threadInfo.getThreadState();
+            dump.append( "\n   java.lang.Thread.State: " );
+            dump.append( state );
+            StackTraceElement[] stackTraceElements = threadInfo.getStackTrace();
+            for ( StackTraceElement stackTraceElement : stackTraceElements )
+            {
+                dump.append( "\n        at " );
+                dump.append( stackTraceElement );
+            }
+            dump.append( "\n\n" );
+        }
+        return dump.toString();
+    }
+
+    private static String getProcessName()
+    {
+        return ManagementFactory.getRuntimeMXBean()
+                .getName();
     }
 }

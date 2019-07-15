@@ -25,19 +25,17 @@ properties(
                                   artifactNumToKeepStr: '50',
                                   daysToKeepStr: env.BRANCH_NAME == 'master' ? '10' : '5',
                                   numToKeepStr: env.BRANCH_NAME == 'master' ? '5' : '3')
-        ),
-        disableConcurrentBuilds()
+        )
     ]
 )
 
-final def oses = ['linux':'ubuntu && !H24', 'windows':'Windows && !windows-2016-1']
+final def oses = ['linux':'ubuntu && !H24 && !H35', 'windows':'Windows']
 final def mavens = env.BRANCH_NAME == 'master' ? ['3.6.x', '3.2.x'] : ['3.6.x']
 // all non-EOL versions and the first EA
-final def jdks = [13, 12, 11, 8, 7]
+final def jdks = [8]
 
-final def options = ['-e', '-V', '-B', '-nsu', '-P', 'run-its']
+final def options = ['-e', '-V', '-B', '-nsu', '-DskipTests']
 final def goals = ['clean', 'install']
-final def goalsDepl = ['clean', 'install', 'jacoco:report']
 final Map stages = [:]
 
 oses.eachWithIndex { osMapping, indexOfOs ->
@@ -69,7 +67,7 @@ oses.eachWithIndex { osMapping, indexOfOs ->
                         def failsafeItPort = 8000 + 100 * indexOfMaven + 10 * indexOfJdk
                         def allOptions = options + ["-Dfailsafe-integration-test-port=${failsafeItPort}", "-Dfailsafe-integration-test-stop-port=${1 + failsafeItPort}"]
                         ws(dir: "${os == 'windows' ? "${TEMP}\\${BUILD_TAG}" : pwd()}") {
-                            buildProcess(stageKey, jdkName, jdkTestName, mvnName, first ? goalsDepl : goals, allOptions, mavenOpts, first)
+                            buildProcess(stageKey, jdkName, jdkTestName, mvnName, goals, allOptions, mavenOpts, first)
                         }
                     }
                 }
@@ -162,37 +160,7 @@ def buildProcess(String stageKey, String jdkName, String jdkTestName, String mvn
             }
         }
     } finally {
-        if (makeReports) {
-            openTasks(ignoreCase: true, canComputeNew: false, defaultEncoding: 'UTF-8', pattern: sourcesPatternCsv(),
-                    high: tasksViolationHigh(), normal: tasksViolationNormal(), low: tasksViolationLow())
-
-            jacoco(changeBuildStatus: false,
-                    execPattern: '**/*.exec',
-                    sourcePattern: sourcesPatternCsv(),
-                    classPattern: classPatternCsv())
-
-            junit(healthScaleFactor: 0.0,
-                    allowEmptyResults: true,
-                    keepLongStdio: true,
-                    testResults: testReportsPatternCsv())
-
-            if (currentBuild.result == 'UNSTABLE') {
-                currentBuild.result = 'FAILURE'
-            }
-        }
-
-        if (currentBuild.result != null && currentBuild.result != 'SUCCESS') {
-            if (fileExists('maven-failsafe-plugin/target/it')) {
-                zip(zipFile: "maven-failsafe-plugin--${stageKey}.zip", dir: 'maven-failsafe-plugin/target/it', archive: true)
-            }
-
-            if (fileExists('surefire-its/target')) {
-                zip(zipFile: "surefire-its--${stageKey}.zip", dir: 'surefire-its/target', archive: true)
-            }
-
-            archiveArtifacts(artifacts: "*--${stageKey}.zip", allowEmptyArchive: true, onlyIfSuccessful: false)
-        }
-        // clean up after ourselves to reduce disk space
+        sleep time: 25, unit: 'SECONDS'
         cleanWs()
     }
 }
@@ -205,6 +173,7 @@ static def sourcesPatternCsv() {
             '**/maven-surefire-report-plugin/src/main/java,' +
             '**/surefire-api/src/main/java,' +
             '**/surefire-booter/src/main/java,' +
+            '**/surefire-extensions-api/src/main/java,' +
             '**/surefire-grouper/src/main/java,' +
             '**/surefire-its/src/main/java,' +
             '**/surefire-logger-api/src/main/java,' +
@@ -220,6 +189,7 @@ static def classPatternCsv() {
             '**/maven-surefire-report-plugin/target/classes,' +
             '**/surefire-api/target/classes,' +
             '**/surefire-booter/target/classes,' +
+            '**/surefire-extensions-api/target/classes,' +
             '**/surefire-grouper/target/classes,' +
             '**/surefire-its/target/classes,' +
             '**/surefire-logger-api/target/classes,' +
