@@ -28,6 +28,7 @@ public class Basic03Test
     @Test
     public void testNothing()
     {
+        System.out.println( new DymmyClass().toString() );
     }
 
     @AfterClass

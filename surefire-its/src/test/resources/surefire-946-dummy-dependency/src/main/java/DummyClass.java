@@ -1,5 +1,3 @@
-package junit44.environment;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,28 +17,14 @@ package junit44.environment;
  * under the License.
  */
 
-import org.junit.AfterClass;
-import org.junit.Test;
-
-public class Basic10Test
+/**
+ *
+ */
+public class DymmyClass
 {
-
-    @Test
-    public void testNothing()
+    @Override
+    public String toString()
     {
-        System.out.println( new DymmyClass().toString() );
+        return "JVM handles a file handler to 'surefire-946-dummy-dependency-0.1.jar'.";
     }
-
-    @AfterClass
-    public static void waitSomeTimeAround()
-    {
-        try
-        {
-            Thread.sleep( Integer.getInteger( "testSleepTime", 2000 ) );
-        }
-        catch ( InterruptedException ignored )
-        {
-        }
-    }
-
 }

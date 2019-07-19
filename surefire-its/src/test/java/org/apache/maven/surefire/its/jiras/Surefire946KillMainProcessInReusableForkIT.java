@@ -60,6 +60,10 @@ public class Surefire946KillMainProcessInReusableForkIT
     {
         unpack( Surefire946KillMainProcessInReusableForkIT.class, "surefire-946-self-destruct-plugin", "plugin" )
                 .executeInstall();
+
+
+        unpack( Surefire946KillMainProcessInReusableForkIT.class, "surefire-946-dummy-dependency", "" )
+                .executeInstall();
     }
 
     @Test( timeout = 60_000 )
