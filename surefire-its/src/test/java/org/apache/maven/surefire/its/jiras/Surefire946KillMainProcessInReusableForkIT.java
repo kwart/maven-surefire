@@ -19,24 +19,36 @@ package org.apache.maven.surefire.its.jiras;
  * under the License.
  */
 
-import com.googlecode.junittoolbox.ParallelParameterized;
 import org.apache.maven.surefire.its.fixture.SurefireJUnit4IntegrationTestCase;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
 
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 
-@RunWith( ParallelParameterized.class )
+import static org.fest.assertions.Assertions.assertThat;
+
+@RunWith( Parameterized.class )
 public class Surefire946KillMainProcessInReusableForkIT
     extends SurefireJUnit4IntegrationTestCase
 {
     // there are 10 test classes that each would wait 3.5 seconds.
     private static final int TEST_SLEEP_TIME = 3_500;
 
-    @Parameter( 0 )
+    private static final String RELATIVE_PATH_TO_DUMMY_DEPENDENCY
+        = "org/apache/maven/plugins/surefire/surefire-946-dummy-dependency/0.1/surefire-946-dummy-dependency-0.1.jar";
+
+    @Parameter
     public String shutdownMavenMethod;
 
     @Parameter( 1 )
@@ -67,7 +79,7 @@ public class Surefire946KillMainProcessInReusableForkIT
     }
 
     @Test( timeout = 60_000 )
-    public void test()
+    public void test() throws Exception
     {
         unpack( "surefire-946-killMainProcessInReusableFork",
                 "-" + shutdownMavenMethod + "-" + shutdownSurefireMethod )
@@ -78,5 +90,21 @@ public class Surefire946KillMainProcessInReusableForkIT
                 .addGoal( "org.apache.maven.plugins.surefire:maven-selfdestruct-plugin:selfdestruct" )
                 .setForkJvm()
                 .forkPerThread().threadCount( 1 ).reuseForks( true ).maven().withFailure().executeTest();
+
+        Thread.sleep( 3_000L );
+
+        XPathFactory xpathFactory = XPathFactory.newInstance();
+        XPath xpath = xpathFactory.newXPath();
+        try ( FileInputStream is = new FileInputStream( System.getProperty( "maven.settings.file" ) ) )
+        {
+            Node root = ( Node ) xpath.evaluate( "/", new InputSource( is ), XPathConstants.NODE );
+            String localRepository = xpath.evaluate( "/localRepository", root );
+            assertThat( localRepository )
+                    .isNotNull()
+                    .isNotEmpty();
+            File dep = new File( localRepository, RELATIVE_PATH_TO_DUMMY_DEPENDENCY );
+            assertThat( dep ).exists();
+            assertThat( dep.delete() ).isTrue();
+        }
     }
 }
