@@ -20,7 +20,7 @@
 /**
  *
  */
-public class DymmyClass
+public class DummyClass
 {
     @Override
     public String toString()
